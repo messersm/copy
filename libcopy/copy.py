@@ -1,7 +1,7 @@
 # standard imports
 import os
 
-from os.path import exists, getsize
+from os.path import exists, getsize, isdir, islink, isfile
 from shutil import _samefile, Error, SpecialFileError, stat
 
 # local imports
@@ -9,6 +9,16 @@ from .helpers import dummy
 
 def copylink(src, dst):
 	target = os.readlink(src)
+	
+	# cp unlinks files, which exist and overwrites them with links...
+	# ... so do we. :)
+	
+	if exists(dst):
+		if isfile(dst) or islink(dst):
+			os.unlink(dst)
+		elif isdir(dst):
+			raise Error("cannot overwrite directory `%s' with non-directory" % dst)
+		
 	os.symlink(target, dst)
 
 def copyfileobj(fsrc, fdst, length=16*1024, callback=dummy):

@@ -5,9 +5,10 @@ from os.path import (	isfile, isdir, islink, exists, basename,
 						join, relpath, normpath, getsize)
 from os import listdir, mkdir
 
+from shutil import copystat
 
 # local imports
-from .copy import copyfile, copylink
+from .copy import copyfile, copylink, Error
 from .helpers import readable_filesize
 
 # constants
@@ -102,14 +103,32 @@ class FilesizeWalker(PathWalker):
 
 class CopyWalker(PathWalker):
 	def file_action(self, src, dst):
-		copyfile(src, dst, resume=self.options.resume)
+		try:
+			copyfile(src, dst, resume=self.options.resume)
+			self.copystat_if_wanted(src, dst)
+		except Error as e:
+			self.error(src, dst, str(e))
 	
 	def link_action(self, src, dst):
-		copylink(src, dst)
+		try:
+			copylink(src, dst)
+			# we don't copy stats of links, since they are ignored anyway...
+			# Additional this causes errors if copying links that are broken.
+			# self.copystat_if_wanted(src, dst)
+		except Error as e:
+			self.error(src, dst, str(e))
 	
 	def dir_action(self, src, dst):
-		if not exists(dst):
-			mkdir(dst)
+		try:
+			if not exists(dst):
+				mkdir(dst)
+				self.copystat_if_wanted(src, dst)
+		except Error as e:
+			self.error(src, dst, str(e))
+		
+	def copystat_if_wanted(self, src, dst):
+		if self.options.preserve_attributes:
+			copystat(src, dst)
 		
 	def error(self, src, dst, msg):
 		sys.stderr.write("%s: %s\n" % (PROG, msg) )
