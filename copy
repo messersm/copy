@@ -32,7 +32,7 @@ def main():
 	parser.add_argument('sources', metavar='SOURCE', nargs='+')
 	parser.add_argument('dest', metavar='DEST')
 	
-	parser.add_argument('-c', '--continue', '--resume', action='store_true', dest='resume', help='Resume already existing partly copied files.')
+	parser.add_argument('-c', action='store_true', dest='resume', help='Continue already existing partly copied files.')
 	# parser.add_argument('--dry-run', action='store_true', dest="dry_run", default=False, help='Does a dry-run telling the user what would happen.')
 	
 	options = parser.parse_args()
