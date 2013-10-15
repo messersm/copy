@@ -1,0 +1,77 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+# standard imports
+import argparse
+import os
+import sys
+
+from os.path import join, isdir, isfile, islink, exists, basename, getsize, dirname, relpath, normpath
+
+# local imports
+from libcopy.copy import copyfile, copylink
+from libcopy.helpers import readable_filesize, dummy
+from libcopy.walker import FilesizeWalker, CopyWalker, TestWalker, NoisyCopyWalker
+
+PROG = basename(sys.argv[0])
+
+def main():
+	parser = argparse.ArgumentParser(description='Copy SOURCE to DEST, or multiple SOURCE(s) to DIRECTORY')
+	# parser.add_argument('-a', action='store_true', dest='preserve_and_recursive', default=False, help='Same as -dpR')
+	parser.add_argument('-r', '-R', action='store_true', dest='recursive', default=False, help='Recurse into directories.')
+	
+	# symlink related:
+	parser.add_argument('-d', '-P', action='store_const', dest='link_policy', const='preserve', default=None, help='Preserve symlinks.')
+	parser.add_argument('-L', action='store_const', dest='link_policy', const='follow_all', help='Follow all symlinks.')
+	parser.add_argument('-H', action='store_const', dest='link_policy', const='follow_commandline', help='Follow symlinks on command line.')
+	
+	# parser.add_argument('-p', action='store_true', dest='preserve_attributes', help='Preserve file attributes if possible.')
+	# parser.add_argument('-f', action='store_true', dest='force', help='Force overwriting existing destination files.')
+	# parser.add_argument('-i', action='store_true', dest='interactive', help='Prompt before overwriting existing files.')
+	# parser.add_argument('-l', '-s', action='store_true', dest='create_symlinks_only', default=False, help='Create (sym)links instead of copying.')
+	parser.add_argument('sources', metavar='SOURCE', nargs='+')
+	parser.add_argument('dest', metavar='DEST')
+	
+	parser.add_argument('-c', '--continue', '--resume', action='store_true', dest='resume', help='Resume already existing partly copied files.')
+	# parser.add_argument('--dry-run', action='store_true', dest="dry_run", default=False, help='Does a dry-run telling the user what would happen.')
+	
+	options = parser.parse_args()
+	# handle -a
+	# if options.preserve_and_recursive:
+	#	options.recursive = True
+	#	options.preserve_attributes = True
+	
+	# set symlink policy
+	if options.link_policy == None and options.recursive:
+		options.link_policy = 'preserve'
+	elif options.link_policy == None:
+		options.link_policy = 'follow_commandline'
+
+	# we catch this very special error beforehand
+	if len(options.sources) > 1 and not isdir(options.dest):
+		sys.stderr.write("%s: target `%s' is not a directory\n" % (PROG, options.dest) )
+		sys.exit(1)
+
+	# if options.dry_run:
+	# 	walker = TestWalker(options)
+	# 	walker.walk_all()
+	# 	sys.exit(0)
+		
+	# sizewalker = FilesizeWalker(options)
+	# sizewalker.walk_all()
+
+	# print("%s to copy..." % readable_filesize(sizewalker.bytes_total) )
+	
+	copywalker = CopyWalker(options)
+	copywalker.walk_all()
+	
+	# sys.stderr.write("\n")
+
+	sys.exit(0)		
+
+if __name__ == '__main__':
+	try:
+		main()
+	except KeyboardInterrupt:
+		sys.stderr.write('\n')
+		
