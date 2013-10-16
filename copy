@@ -26,7 +26,7 @@ def main():
 	parser.add_argument('-H', action='store_const', dest='link_policy', const='follow_commandline', help='Follow symlinks on command line.')
 	
 	parser.add_argument('-p', action='store_true', dest='preserve_attributes', help='Preserve file attributes if possible.')
-	# parser.add_argument('-f', action='store_true', dest='force', help='Force overwriting existing destination files.')
+	parser.add_argument('-f', action='store_true', dest='force', default=False, help='Force overwriting existing destination files.')
 	# parser.add_argument('-i', action='store_true', dest='interactive', help='Prompt before overwriting existing files.')
 	# parser.add_argument('-l', '-s', action='store_true', dest='create_symlinks_only', default=False, help='Create (sym)links instead of copying.')
 	parser.add_argument('sources', metavar='SOURCE', nargs='+')

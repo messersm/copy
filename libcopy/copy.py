@@ -7,17 +7,30 @@ from shutil import _samefile, Error, SpecialFileError, stat
 # local imports
 from .helpers import dummy
 
-def copylink(src, dst):
+def copylink(src, dst, force=False):
 	target = os.readlink(src)
 	
 	# cp unlinks files, which exist and overwrites them with links...
 	# ... so do we. :)
 	
 	if exists(dst):
+		# Don't unlink the file if -f is not set and dst
+		# is not writeable by us.
+		if force == False:
+			try:
+				fdst = open(dst, 'ab')
+				fdst.close()
+			except:
+				raise Error("Can't create '%s': Permission denied" % dst)
+		
 		if isfile(dst) or islink(dst):
-			os.unlink(dst)
+			try:
+				os.unlink(dst)
+			except OSError:
+				raise Error("Can't remove '%s': Permission denied" % dst)
+				
 		elif isdir(dst):
-			raise Error("cannot overwrite directory `%s' with non-directory" % dst)
+			raise Error("cannot overwrite directory '%s' with non-directory" % dst)
 		
 	os.symlink(target, dst)
 
@@ -31,10 +44,10 @@ def copyfileobj(fsrc, fdst, length=16*1024, callback=dummy):
 		callback( len(buf) )
 		fdst.write(buf)
 
-def copyfile(src, dst, length=16*1024, resume=False, callback=dummy):
+def copyfile(src, dst, length=16*1024, resume=False, force=False, callback=dummy):
 	"""Copy data from src to dst"""
 	if _samefile(src, dst):
-		raise Error("`%s` and `%s` are the same file" % (src, dst))
+		raise Error("'%s' and '%s' are the same file" % (src, dst))
 
 	for fn in [src, dst]:
 		try:
@@ -45,7 +58,7 @@ def copyfile(src, dst, length=16*1024, resume=False, callback=dummy):
 		else:
 			# XXX What about other special files? (sockets, devices...)
 			if stat.S_ISFIFO(st.st_mode):
-				raise SpecialFileError("`%s` is a named pipe" % fn)
+				raise SpecialFileError("'%s' is a named pipe" % fn)
 
 	if exists(dst) and resume and ispartfile(src, dst):
 		offset = getsize(dst)
@@ -55,12 +68,22 @@ def copyfile(src, dst, length=16*1024, resume=False, callback=dummy):
 		dst_mode = 'wb'
 
 	with open(src, 'rb') as fsrc:
-		with open(dst, dst_mode) as fdst:
-			if offset > 0:
-				fsrc.seek(offset)
-				callback(offset)
+		try:
+			with open(dst, dst_mode) as fdst:
+				if offset > 0:
+					fsrc.seek(offset)
+					callback(offset)
 			
-			copyfileobj(fsrc, fdst, length=length, callback=callback)
+				copyfileobj(fsrc, fdst, length=length, callback=callback)
+		except IOError as e:
+			if force:
+				try:
+					os.unlink(dst)
+				except OSError:
+					raise Error("Can't remove '%s': Permission denied" % dst)
+				copyfile(src, dst, length=length, resume=resume, force=False, callback=callback)
+			else:
+				raise Error("Can't create '%s': Permission denied" % dst)
 
 def _checkpart(fsrc, fdst, offset, length=512):
 	fsrc.seek(offset)

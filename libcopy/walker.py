@@ -104,14 +104,14 @@ class FilesizeWalker(PathWalker):
 class CopyWalker(PathWalker):
 	def file_action(self, src, dst):
 		try:
-			copyfile(src, dst, resume=self.options.resume)
+			copyfile(src, dst, resume=self.options.resume, force=self.options.force)
 			self.copystat_if_wanted(src, dst)
 		except Error as e:
 			self.error(src, dst, str(e))
 	
 	def link_action(self, src, dst):
 		try:
-			copylink(src, dst)
+			copylink(src, dst, force=self.options.force)
 			# we don't copy stats of links, since they are ignored anyway...
 			# Additional this causes errors if copying links that are broken.
 			# self.copystat_if_wanted(src, dst)
