@@ -85,23 +85,27 @@ def copyfile(src, dst, length=16*1024, resume=False, force=False, callback=dummy
 		offset = 0
 		dst_mode = 'wb'
 
-	with open(src, 'rb') as fsrc:
-		try:
-			with open(dst, dst_mode) as fdst:
-				if offset > 0:
-					fsrc.seek(offset)
-					callback(offset)
+	try:
+		with open(src, 'rb') as fsrc:
+			try:
+				with open(dst, dst_mode) as fdst:
+					if offset > 0:
+						fsrc.seek(offset)
+						callback(offset)
 			
-				copyfileobj(fsrc, fdst, length=length, callback=callback)
-		except IOError as e:
-			if force:
-				try:
-					os.unlink(dst)
-				except OSError:
-					raise Error("Can't remove '%s': Permission denied" % dst)
-				copyfile(src, dst, length=length, resume=resume, force=False, callback=callback)
-			else:
-				raise Error("Can't create '%s': Permission denied" % dst)
+					copyfileobj(fsrc, fdst, length=length, callback=callback)
+			except IOError as e:
+				if force:
+					try:
+						os.unlink(dst)
+					except OSError:
+						raise Error("Can't remove '%s': Permission denied" % dst)
+					copyfile(src, dst, length=length, resume=resume, force=False, callback=callback)
+				else:
+					raise Error("Can't create '%s': Permission denied" % dst)
+					
+	except IOError:
+		raise Error("Can't open '%s': Permission denied" % src)
 
 def _checkpart(fsrc, fdst, offset, length=512):
 	fsrc.seek(offset)
