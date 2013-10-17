@@ -39,7 +39,7 @@ def main():
 	parser.add_argument('-r', '-R', action='store_true', dest='recursive', default=False, help='Recurse into directories.')
 	
 	# symlink related:
-	parser.add_argument('-d', '-P', action='store_const', dest='link_policy', const='preserve', default=None, help='Preserve symlinks.')
+	parser.add_argument('-d', '-P', action='store_const', dest='link_policy', const='preserve', default=None, help='Preserve (sym)links.')
 	parser.add_argument('-L', action='store_const', dest='link_policy', const='follow_all', help='Follow all symlinks.')
 	parser.add_argument('-H', action='store_const', dest='link_policy', const='follow_commandline', help='Follow symlinks on command line.')
 	

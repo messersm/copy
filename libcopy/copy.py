@@ -34,9 +34,8 @@ def isdevfile(filename):
 
 	return stat.S_ISCHR(st.st_mode) or stat.S_ISBLK(st.st_mode)
 
-def copylink(src, dst, force=False):
-	target = os.readlink(src)
-	
+
+def copylink(src, dst, force=False, hardlink=False):
 	# cp unlinks files, which exist and overwrites them with links...
 	# ... so do we. :)
 	
@@ -58,8 +57,12 @@ def copylink(src, dst, force=False):
 				
 		elif isdir(dst):
 			raise Error("cannot overwrite directory '%s' with non-directory" % dst)
-		
-	os.symlink(target, dst)
+	
+	if hardlink:
+		os.link(src, dst)
+	else:
+		target = os.readlink(src)	
+		os.symlink(target, dst)
 
 def copyfileobj(fsrc, fdst, length=16*1024, callback=dummy):
 	"""copy data from file-like object fsrc to file-like object fdst"""

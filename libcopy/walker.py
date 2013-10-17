@@ -17,7 +17,9 @@
 
 
 # standard imports
+import os
 import sys
+
 
 from os.path import (	isfile, isdir, islink, exists, basename,
 						join, relpath, normpath, getsize)
@@ -40,6 +42,11 @@ class PathWalker(object):
 		# self.LINK_PRESERVE = 1
 		# self.LINK_FOLLOW_COMMAND_LINE = 2
 		# self.LINK_FOLLOW_ALL = 3
+		
+		self.inodes = {}
+	
+	def hardlink_action(self, src, dst):
+		pass
 	
 	def link_action(self, src, dst):
 		pass
@@ -107,7 +114,20 @@ class PathWalker(object):
 				fullname = join(src, item)
 				self.walk(fullname, commandline=commandline)
 				
-		elif isfile(src) or isdevfile(src):
+		elif isfile(src):
+			try:
+				st = os.stat(src)
+				old_dst = self.inodes.get(st.st_ino, None)
+				
+				if old_dst and self.options.link_policy == 'preserve':
+					self.hardlink_action(old_dst, dst)
+				else:
+					self.inodes[st.st_ino] = dst
+			except OSError:
+				pass
+			
+			self.file_action(src, dst)
+		elif isdevfile(src):
 			self.file_action(src, dst)
 
 class FilesizeWalker(PathWalker):
@@ -127,6 +147,12 @@ class CopyWalker(PathWalker):
 		except Error as e:
 			self.error(src, dst, str(e))
 	
+	def hardlink_action(self, src, dst):
+		try:
+			copylink(src, dst, force=self.options.force, hardlink=True)
+		except Error as e:
+			self.error(src, dst, str(e))
+		
 	def link_action(self, src, dst):
 		try:
 			copylink(src, dst, force=self.options.force)
