@@ -26,7 +26,7 @@ from os import listdir, mkdir
 from shutil import copystat
 
 # local imports
-from .copy import copyfile, copylink, Error
+from .copy import copyfile, copylink, Error, isdevfile
 from .helpers import readable_filesize
 
 # constants
@@ -107,7 +107,7 @@ class PathWalker(object):
 				fullname = join(src, item)
 				self.walk(fullname, commandline=commandline)
 				
-		elif isfile(src):
+		elif isfile(src) or isdevfile(src):
 			self.file_action(src, dst)
 
 class FilesizeWalker(PathWalker):

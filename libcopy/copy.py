@@ -25,6 +25,15 @@ from shutil import _samefile, Error, SpecialFileError, stat
 # local imports
 from .helpers import dummy
 
+def isdevfile(filename):
+	"""Returns True if filename points to a device file, else False."""
+	try:
+		st = os.stat(filename)
+	except OSError:
+		return False
+
+	return stat.S_ISCHR(st.st_mode) or stat.S_ISBLK(st.st_mode)
+
 def copylink(src, dst, force=False):
 	target = os.readlink(src)
 	
