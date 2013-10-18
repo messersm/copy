@@ -30,6 +30,7 @@ from os.path import join, isdir, isfile, islink, exists, basename, getsize, dirn
 from libcopy.copy import copyfile, copylink
 from libcopy.helpers import readable_filesize, dummy
 from libcopy.walker import FilesizeWalker, CopyWalker, TestWalker, NoisyCopyWalker
+from libcopy import VERSION
 
 PROG = basename(sys.argv[0])
 
@@ -50,6 +51,10 @@ def main():
 	parser.add_argument('sources', metavar='SOURCE', nargs='+')
 	parser.add_argument('dest', metavar='DEST')
 	
+	# version info
+	parser.add_argument('--version', '-V', action='version', version="%s %s" % (PROG, VERSION) )
+	
+	# advanced options
 	parser.add_argument('-c', action='store_true', dest='resume', help='Continue already existing partly copied files.')
 	# parser.add_argument('--dry-run', action='store_true', dest="dry_run", default=False, help='Does a dry-run telling the user what would happen.')
 	
