@@ -67,6 +67,10 @@ cd tmp/test_run || exit 1
 logfile="$(mktemp)"
 
 for test in $(find ../$BUSYBOX_DIR/testsuite/cp -type f); do
+	if [ "$(find . -type f)" ]; then
+		rm -r * || exit 1
+	fi
+
 	echo -n ">>> ${test##**/}"
 	sh $test 2>$logfile
 	
@@ -78,9 +82,7 @@ for test in $(find ../$BUSYBOX_DIR/testsuite/cp -type f); do
 		cat $logfile || exit 1
 	fi
 	
-	if [ "$(find . -type f)" ]; then
-		rm -r * || exit 1
-	fi
+	
 done
 
 rm $logfile || exit 1
