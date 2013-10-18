@@ -44,6 +44,18 @@ class PathWalker(object):
 		# self.LINK_FOLLOW_ALL = 3
 		
 		self.inodes = {}
+		
+		# it's important to check this beforehand, because
+		# we may change this state later by ourselves:
+		if exists(self.options.dest):
+			self.target_exists = True
+		else:
+			self.target_exists = False
+			
+		if isdir(self.options.dest):
+			self.target_isdir = True
+		else:
+			self.target_isdir = False
 	
 	def hardlink_action(self, src, dst):
 		pass
@@ -60,10 +72,10 @@ class PathWalker(object):
 	def compose_dstname(self, commandline, src):
 		target = self.options.dest
 		
-		if src == commandline and isfile(src) and not exists(target):
+		if src == commandline and isfile(src) and not self.target_exists:
 			return target
 		
-		elif not isdir(target):
+		elif not self.target_isdir:
 			rel = relpath(src, commandline)
 			dst = normpath( join(target, rel) )
 			return dst
@@ -219,6 +231,9 @@ class NoisyCopyWalker(CopyWalker):
 class TestWalker(PathWalker):
 	def file_action(self, src, dst):
 		print("file: %s -> %s" % (src, dst) )
+	
+	def hardlink_action(self, src, dst):
+		print("hardlink: %s -> %s" % (src, dst) )
 	
 	def link_action(self, src, dst):
 		print("link: %s -> %s" % (src, dst) )
