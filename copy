@@ -29,7 +29,7 @@ from os.path import join, isdir, isfile, islink, exists, basename, getsize, dirn
 # local imports
 from libcopy.copy import copyfile, copylink
 from libcopy.helpers import readable_filesize, dummy
-from libcopy.walker import FilesizeWalker, CopyWalker, TestWalker, NoisyCopyWalker
+from libcopy.walker import FilesizeWalker, CopyWalker, TestWalker, VerboseCopyWalker, ProgressCopyWalker
 from libcopy import VERSION
 
 PROG = basename(sys.argv[0])
@@ -53,6 +53,9 @@ def main():
 	
 	# version info
 	parser.add_argument('--version', '-V', action='version', version="%s %s" % (PROG, VERSION) )
+	
+	# verbose output
+	parser.add_argument('--verbose', '-v', action="count", default=0, help='Be more verbose. -vv gives detailed progress information.')
 	
 	# advanced options
 	parser.add_argument('-c', action='store_true', dest='resume', help='Continue already existing partly copied files.')
@@ -84,11 +87,21 @@ def main():
 	# sizewalker.walk_all()
 
 	# print("%s to copy..." % readable_filesize(sizewalker.bytes_total) )
+
+	if options.verbose == 0:
+		walker = CopyWalker(options)
+
+	elif options.verbose == 1:
+		walker = VerboseCopyWalker(options)
 	
-	copywalker = CopyWalker(options)
-	copywalker.walk_all()
-	
-	# sys.stderr.write("\n")
+	elif options.verbose > 1:
+		sizewalker = FilesizeWalker(options)
+		sizewalker.walk_all()
+		
+		walker = ProgressCopyWalker(sizewalker.bytes_total, options)
+		
+	walker.walk_all()
+	walker.finish_output()
 
 	sys.exit(0)		
 

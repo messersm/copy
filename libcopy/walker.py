@@ -29,10 +29,11 @@ from shutil import copystat
 
 # local imports
 from .copy import copyfile, copylink, Error, isdevfile
-from .helpers import readable_filesize
+from .helpers import readable_filesize, shortname
 
 # constants
 PROG = basename(sys.argv[0])
+TERMINAL_WIDTH = 80
 
 class PathWalker(object):
 	def __init__(self, options):
@@ -142,6 +143,9 @@ class PathWalker(object):
 		elif isdevfile(src):
 			self.file_action(src, dst)
 
+	def finish_output(self):
+		pass
+
 class FilesizeWalker(PathWalker):
 	def __init__(self, *args, **kwargs):
 		super(self.__class__, self).__init__(*args, **kwargs)
@@ -189,7 +193,24 @@ class CopyWalker(PathWalker):
 	def error(self, src, dst, msg):
 		sys.stderr.write("%s: %s\n" % (PROG, msg) )
 
-class NoisyCopyWalker(CopyWalker):
+class VerboseCopyWalker(CopyWalker):
+	def file_action(self, src, dst):
+		sys.stderr.write("'%s' -> '%s'\n" % (src, dst) )
+		super(self.__class__, self).file_action(src, dst)
+
+	def hardlink_action(self, src, dst):
+		sys.stderr.write("'%s' -> '%s'\n" % (src, dst) )
+		super(self.__class__, self).hardlink_action(src, dst)
+
+	def dir_action(self, src, dst):
+		sys.stderr.write("'%s' -> '%s'\n" % (src, dst) )
+		super(self.__class__, self).dir_action(src, dst)
+
+	def link_action(self, src, dst):
+		sys.stderr.write("'%s' -> '%s'\n" % (src, dst) )
+		super(self.__class__, self).link_action(src, dst)
+
+class ProgressCopyWalker(CopyWalker):
 	def __init__(self, bytes_total, *args, **kwargs):
 		super(self.__class__, self).__init__(*args, **kwargs)
 		
@@ -200,24 +221,42 @@ class NoisyCopyWalker(CopyWalker):
 		self.f_bytes_total = 0
 		
 		self.f_name = ''
+		
+		self.write_to_atty = sys.stderr.isatty()
 	
 	def file_action(self, src, dst):
+		self.set_file(src)
+		
+		try:
+			copyfile(src, dst, resume=self.options.resume,
+				force=self.options.force, callback=self.update_state)
+			self.copystat_if_wanted(src, dst)
+		except Error as e:
+			self.error(src, dst, str(e))
+
+	def set_file(self, src):
 		self.f_name = basename(src)
 		self.f_bytes_done = 0
 		self.f_bytes_total = getsize(src)
-		copyfile(src, dst, resume=self.options.resume, callback=self.update_state)
-	
+
 	def update_state(self, bytes_step):
+		if self.write_to_atty:
+			self.update_state_atty(bytes_step)
+
+	def update_state_atty(self, bytes_step):
 		self.bytes_done += bytes_step
 		self.f_bytes_done += bytes_step
 		
-		s = "%s: " % self.f_name
+		s = '' 
 		i = 0
 		
 		for (a, b) in (	(self.f_bytes_done, self.f_bytes_total),
 						(self.bytes_done, self.bytes_total) ):
 			
-			c = float(a) * 100 / b
+			if b == 0:
+				c = 100
+			else:
+				c = float(a) * 100 / b
 			s += "%s/%s" % (readable_filesize(a), readable_filesize(b) )
 			s += " (%.1f%%)" % c
 			
@@ -225,21 +264,34 @@ class NoisyCopyWalker(CopyWalker):
 				s += ", total: "
 				i += 1
 
-		sys.stderr.write("\r%s" % s)
+		fname = shortname(self.f_name, TERMINAL_WIDTH - len(s) - 2)
+		s = fname + ': ' + s
 		
+		len_s = len(s)
+		# for now we hardcode this
+		if len_s < TERMINAL_WIDTH:
+			s += ' ' * (TERMINAL_WIDTH - len_s)
+		
+		sys.stderr.write("\r%s" % s)
 
+	def error(self, src, dst, msg):
+		sys.stderr.write("\r%s: %s\n" % (PROG, msg) )
+
+	def finish_output(self):
+		sys.stderr.write('\n')
+		
 class TestWalker(PathWalker):
 	def file_action(self, src, dst):
-		print("file: %s -> %s" % (src, dst) )
+		print("'%s' -> '%s'" % (src, dst) )
 	
 	def hardlink_action(self, src, dst):
-		print("hardlink: %s -> %s" % (src, dst) )
+		print("'%s' -> '%s'" % (src, dst) )
 	
 	def link_action(self, src, dst):
-		print("link: %s -> %s" % (src, dst) )
+		print("'%s' -> '%s'" % (src, dst) )
 	
 	def dir_action(self, src, dst):
-		print("dir: %s -> %s" % (src, dst) )
+		print("'%s' -> '%s'" % (src, dst) )
 		
 	def error(self, src, dst, msg):
 		print("ERROR: %s" % msg)

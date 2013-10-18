@@ -31,5 +31,14 @@ def readable_filesize(filesize):
 	return "%d" % filesize
 
 
+def shortname(name, length=8):
+	if len(name) <= length:
+		return name
+		
+	dots = '.' * (2 + length % 2)
+	part = (length - length % 2 - 2) // 2
+	
+	return name[:part] + dots + name[-part:]
+
 def dummy(*args, **kwargs):
 	pass
