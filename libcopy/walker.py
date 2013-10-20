@@ -109,7 +109,7 @@ class PathWalker(object):
 				return
 				
 			elif self.options.link_policy == 'follow_commandline' and src != commandline:
-				link_action(src, dst)
+				self.link_action(src, dst)
 				return
 			
 		if isdir(src):
