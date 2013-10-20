@@ -20,6 +20,7 @@
 import os
 import stat
 
+from collections import namedtuple
 from fnmatch import fnmatch
 from os.path import islink, join
 
@@ -44,7 +45,7 @@ L_FOLLOW_ALL	= 2
 L_PRESERVE		= 3
 
 def walk(*paths, **kwargs):
-	"""Walks along the paths yielding a 3-tuple (TYPE, SRC, DST).
+	"""Walks along the paths yielding a 4-tuple (TYPE, TOP, SRC, DST).
 	
 	TYPE is one of these module level constants:
 	 - NOSTAT       File does not exist
@@ -58,18 +59,25 @@ def walk(*paths, **kwargs):
 	 - BLOCK        Block device
 	 - CHAR         Character device
 	 - SOCK         Socket
-	 
+	
+	TOP is one of the paths that was given to walk(). This is useful
+	if you want to use the relative path of SRC or DST.
+	
 	SRC is the name of the file to operate on. It's equal to the file
 	we just walked except in cases where the walked file is a hardlink
 	to an already walked file and you want to preserve hardlinks. In
 	this case it's equal to the name of the already walked file with the
 	same inode.
 	
+	DO NOTE: The current implementation of walk allows tracking
+	hardlinks across different path-tops. That means, that SRC doesn't
+	have to lie under TOP, if TYPE is HARDLINK.
+	
 	DST is the name of the destination file of the operation. It's
 	always equal to the name of the file we just walked. You still need
 	to adjust this name (e.g. join it with a name of the target
 	directory).
-		
+	
 	Accepted keywords:
 	 - links:     L_FOLLOW_TOP    Follow top-level symlinks only
 	              L_FOLLOW_ALL    Follow all symlinks
@@ -115,7 +123,7 @@ def _is_excluded(path, excludes):
 
 def _walk_path( path, top=None, recurse=False, links=L_FOLLOW_TOP,
 				excludes=[], inodes={}):
-	"""Walks along the given paths. Yields (TYPE, SRC, DST) tuple.
+	"""Walks along the given paths. Yields (TYPE, TOP, SRC, DST) tuple.
 	
 	This is an internal function and does the real work described by
 	walk().
@@ -123,14 +131,14 @@ def _walk_path( path, top=None, recurse=False, links=L_FOLLOW_TOP,
 	
 	if _is_excluded(path, excludes):
 		st = None
-		yield (EXCLUDE, path, path)
+		yield (EXCLUDE, top, path, path)
 	else:
 		# handle non-existent files
 		try:
 			st = os.stat(path)
 		except OSError:
 			st = None
-			yield (NOSTAT, path, path)
+			yield (NOSTAT, top, path, path)
 		
 	as_link = False
 			
@@ -138,19 +146,19 @@ def _walk_path( path, top=None, recurse=False, links=L_FOLLOW_TOP,
 	if st and islink(path):
 		if links == L_PRESERVE:
 			as_link = True
-			yield (LINK, path, path)
+			yield (LINK, top, path, path)
 
 		elif links == L_FOLLOW_TOP and path != top:
 			as_link = True
-			yield (LINK, path, path)
+			yield (LINK, top, path, path)
 
 		
 	if st and not as_link:
 		if stat.S_ISDIR(st.st_mode):
 			if not recurse:
-				yield (IGNORE, path, path)
+				yield (IGNORE, top, path, path)
 			else:
-				yield (DIR, path, path)
+				yield (DIR, top, path, path)
 				
 				# recurse into dir
 				for item in os.listdir(path):
@@ -168,23 +176,23 @@ def _walk_path( path, top=None, recurse=False, links=L_FOLLOW_TOP,
 			if links == L_PRESERVE:
 				old_path = inodes.get(st.st_ino, None)
 				if old_path:
-					yield (HARDLINK, old_path, path)
+					yield (HARDLINK, top, old_path, path)
 				else:
 					# track this file:
 					inodes[st.st_ino] = path
-					yield (REG, path, path)
+					yield (REG, top, path, path)
 				
 			else:
 				# no need to keep track of inodes if
 				# links is not L_PRESERVE
-				yield (REG, path, path)
+				yield (REG, top, path, path)
 			
 		elif stat.S_ISBLK(st.st_mode):
-			yield (BLOCK, path, path)
+			yield (BLOCK, top, path, path)
 				
 		elif stat.S_ISCHR(st.st_mode):
-			yield (CHAR, path, path)
+			yield (CHAR, top, path, path)
 			
 		elif stat.S_ISSOCK(st.st_mode):
-			yield (SOCK, path, path)
+			yield (SOCK, top, path, path)
 			
