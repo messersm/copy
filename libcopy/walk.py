@@ -1,11 +1,13 @@
 import os
 import stat
 
+from fnmatch import fnmatch
 from os.path import islink, join
 
 # file types
 NOSTAT		= -1	# does not exist
-IGNORE		= -2	# wants to be ignored
+IGNORE		= -2	# directory, we don't want to recurse into
+EXCLUDE		= -3	# pathname was explicitly excluded
 		
 REG			= 1		# regular file
 DIR			= 2		# directory
@@ -26,7 +28,9 @@ def walk(*paths, **kwargs):
 	
 	TYPE is one of these module level constants:
 	 - NOSTAT       File does not exist
-	 - IGNORE       File wants to be ignored
+	 - IGNORE       Directory, we don't want to recurse into
+	 - EXCLUDE      Pathname as been excluded
+	 
 	 - REG          Regular file
 	 - DIR          Directory
 	 - LINK         Symbolic link
@@ -50,9 +54,17 @@ def walk(*paths, **kwargs):
 	 - links:     L_FOLLOW_TOP    Follow top-level symlinks only
 	              L_FOLLOW_ALL    Follow all symlinks
 	              L_PRESERVE      Preserve symlinks
+	              
+	              default = L_FOLLOW_TOP
 						
 	 - recurse:   True            Recurse into directories
 	              False           Don't
+	              
+	              default = False
+	 
+	 - excludes:  List of pathname patterns to exclude
+	 
+	              default = []
 
 	"""
 	
@@ -60,6 +72,7 @@ def walk(*paths, **kwargs):
 	
 	links = kwargs.pop('links', L_FOLLOW_TOP)
 	recurse = kwargs.pop('recurse', False)
+	excludes = kwargs.pop('excludes', [])
 	
 	for key in kwargs:
 		raise TypeError("walk() got an unexpected keyword argument '%s'" % key)
@@ -69,22 +82,35 @@ def walk(*paths, **kwargs):
 							top=path,
 							recurse=recurse,
 							links=links,
+							excludes=excludes,
 							inodes=inodes):
 			yield result
 
-def _walk_path(path, top=None, recurse=False, links=L_FOLLOW_TOP, inodes={}):
+def _is_excluded(path, excludes):
+	for exclude in excludes:
+		if fnmatch(path, exclude):
+			return True
+	
+	return False
+
+def _walk_path( path, top=None, recurse=False, links=L_FOLLOW_TOP,
+				excludes=[], inodes={}):
 	"""Walks along the given paths. Yields (TYPE, SRC, DST) tuple.
 	
 	This is an internal function and does the real work described by
 	walk().
 	"""
-		
-	# handle non-existent files
-	try:
-		st = os.stat(path)
-	except OSError:
+	
+	if _is_excluded(path, excludes):
 		st = None
-		yield (NOSTAT, path, path)
+		yield (EXCLUDE, path, path)
+	else:
+		# handle non-existent files
+		try:
+			st = os.stat(path)
+		except OSError:
+			st = None
+			yield (NOSTAT, path, path)
 		
 	as_link = False
 			
@@ -113,6 +139,7 @@ def _walk_path(path, top=None, recurse=False, links=L_FOLLOW_TOP, inodes={}):
 										top=top,
 										recurse=recurse,
 										links=links,
+										excludes=excludes,
 										inodes=inodes):
 						yield result
 			
