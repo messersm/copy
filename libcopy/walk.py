@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with copy.  If not, see <http://www.gnu.org/licenses/>.
 
+"""Walk along paths yielding copy jobs."""
 
 # standard imports
 import os
