@@ -21,35 +21,34 @@
 
 # standard imports
 import argparse
-import os
 import sys
 
-from os.path import join, isdir, isfile, islink, exists, basename, getsize, dirname, relpath, normpath
+from os.path import basename
 
 # local imports
-from libcopy.copy import copyfile, copylink
-from libcopy.helpers import readable_filesize, dummy
-from libcopy.walker import FilesizeWalker, CopyWalker, TestWalker, VerboseCopyWalker, ProgressCopyWalker
 from libcopy import VERSION
+from libcopy.manager import CopyManager
+from libcopy.walk import L_FOLLOW_TOP, L_FOLLOW_ALL, L_PRESERVE
 
 PROG = basename(sys.argv[0])
 
 def main():
 	parser = argparse.ArgumentParser(description='Copy SOURCE to DEST, or multiple SOURCE(s) to DIRECTORY')
-	parser.add_argument('-a', action='store_true', dest='preserve_and_recursive', default=False, help='same as -dpR')
-	parser.add_argument('-r', '-R', action='store_true', dest='recursive', default=False, help='recurse into directories')
+	parser.add_argument('-a', action='store_true', dest='preserve_and_recurse', default=False, help='same as -dpR')
+	parser.add_argument('-r', '-R', action='store_true', dest='recurse', default=False, help='recurse into directories')
 	
 	# symlink related:
-	parser.add_argument('-d', '-P', action='store_const', dest='link_policy', const='preserve', default=None, help='preserve (sym)links')
-	parser.add_argument('-L', action='store_const', dest='link_policy', const='follow_all', help='follow all symlinks')
-	parser.add_argument('-H', action='store_const', dest='link_policy', const='follow_commandline', help='follow symlinks on command line')
+	parser.add_argument('-d', '-P', action='store_const', dest='links', const=L_PRESERVE, default=None, help='preserve (sym)links')
+	parser.add_argument('-L', action='store_const', dest='links', const=L_FOLLOW_ALL, help='follow all symlinks')
+	parser.add_argument('-H', action='store_const', dest='links', const=L_FOLLOW_TOP, help='follow symlinks on command line')
 	
 	parser.add_argument('-p', action='store_true', dest='preserve_attributes', help='preserve file attributes if possible')
 	parser.add_argument('-f', action='store_true', dest='force', default=False, help='force overwriting existing destination files')
-	# parser.add_argument('-i', action='store_true', dest='interactive', help='Prompt before overwriting existing files.')
+	parser.add_argument('-e', '--exclude', action='append', dest='excludes', metavar='EXCLUDE_PATTERN', default=[], help='exclude file pattern')
+	parser.add_argument('-i', '--interactive', action='store_true', dest='interactive', help='prompt before overwriting existing files')
 	# parser.add_argument('-l', '-s', action='store_true', dest='create_symlinks_only', default=False, help='Create (sym)links instead of copying.')
 	parser.add_argument('sources', metavar='SOURCE', nargs='+')
-	parser.add_argument('dest', metavar='DEST')
+	parser.add_argument('target', metavar='DEST')
 	
 	# version info
 	parser.add_argument('--version', '-V', action='version', version="%s %s" % (PROG, VERSION) )
@@ -63,47 +62,23 @@ def main():
 	
 	options = parser.parse_args()
 	# handle -a
-	if options.preserve_and_recursive:
-		options.recursive = True
+	if options.preserve_and_recurse:
+		options.recurse = True
 		options.preserve_attributes = True
 	
 	# set symlink policy
-	if options.link_policy == None and options.recursive:
-		options.link_policy = 'preserve'
-	elif options.link_policy == None:
-		options.link_policy = 'follow_commandline'
+	if options.links == None and options.recurse:
+		options.links = L_PRESERVE
+	elif options.links == None:
+		options.links = L_FOLLOW_TOP
 
-	# we catch this very special error beforehand
-	if len(options.sources) > 1 and not isdir(options.dest):
-		sys.stderr.write("%s: target `%s' is not a directory\n" % (PROG, options.dest) )
-		sys.exit(1)
-
-	# if options.dry_run:
-	# 	walker = TestWalker(options)
-	# 	walker.walk_all()
-	# 	sys.exit(0)
-		
-	# sizewalker = FilesizeWalker(options)
-	# sizewalker.walk_all()
-
-	# print("%s to copy..." % readable_filesize(sizewalker.bytes_total) )
-
-	if options.verbose == 0:
-		walker = CopyWalker(options)
-
-	elif options.verbose == 1:
-		walker = VerboseCopyWalker(options)
-	
-	elif options.verbose > 1:
-		sizewalker = FilesizeWalker(options)
-		sizewalker.walk_all()
-		
-		walker = ProgressCopyWalker(sizewalker.bytes_total, options)
-		
-	walker.walk_all()
-	walker.finish_output()
-
-	sys.exit(0)		
+	try:
+		m = CopyManager(options)
+		m.start()
+	except KeyboardInterrupt:
+		m.stop()
+		sys.stderr.write('\n')
+		sys.exit(-1)
 
 if __name__ == '__main__':
 	try:
