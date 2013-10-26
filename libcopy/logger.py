@@ -6,6 +6,9 @@ from os.path import basename
 PROG = basename(sys.argv[0])
 
 class BaseLogger(object):
+	def __init__(self):
+		self.had_errors = 0
+	
 	def start_copy(self, src, dst):
 		pass
 	
@@ -16,6 +19,8 @@ class BaseLogger(object):
 		pass
 
 	def error(self, msg):
+		self.had_errors = 1
+		
 		sys.stderr.write("%s: %s\n" % (PROG, msg) )
 	
 	def input(self, msg):

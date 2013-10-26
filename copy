@@ -29,6 +29,7 @@ from os.path import basename
 from libcopy import VERSION
 from libcopy.manager import CopyManager
 from libcopy.walk import L_FOLLOW_TOP, L_FOLLOW_ALL, L_PRESERVE
+from libcopy.walker import FilesizeWalker, CopyWalker
 
 PROG = basename(sys.argv[0])
 
@@ -72,13 +73,19 @@ def main():
 	elif options.links == None:
 		options.links = L_FOLLOW_TOP
 
-	try:
-		m = CopyManager(options)
-		m.start()
-	except KeyboardInterrupt:
-		m.stop()
-		sys.stderr.write('\n')
-		sys.exit(-1)
+	# prepare the manager
+	m = CopyManager(options)
+	if options.verbose >= 2:
+		m.workers.append( FilesizeWalker(m) )
+	
+	m.workers.append( CopyWalker(m) )
+
+	# start the manager and check for errors
+	m.start()
+	if m.logger.had_errors:
+		sys.exit(1)
+	else:
+		sys.exit(0)
 
 if __name__ == '__main__':
 	try:
