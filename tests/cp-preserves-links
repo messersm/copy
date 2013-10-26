@@ -1,0 +1,5 @@
+touch foo
+ln -s foo bar
+copy -d bar baz
+test -L baz
+test xfoo = x`readlink baz`
