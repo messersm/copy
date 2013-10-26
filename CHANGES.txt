@@ -1,0 +1,52 @@
+CHANGES
+=======
+
+0.2 -> 0.3
+----------
+General:
+ - Added CHANGES.txt.
+ - Added mutiple tests to the git repository.
+ - copy will exit with status '2' in any case of a programming error.
+ 
+Options:
+ - -vv option now aligns to the right for 80 row-terminals.
+ - -e, --exclude option added.
+ - -i, --interactive option added.
+
+Bugfixes:
+ - Fixed bug occuring if using -RH.
+
+
+0.1 -> 0.2
+----------
+General:
+ - Added README.txt and setup.py
+ - Added license information.
+ - Added tests.
+ 
+Options:
+ - -v option added.
+ - -V, --version option added.
+ - -f option added.
+
+Bugfixes:
+ - Passing cp-dir-create-dir test now.
+ - Passing test cp-preserves-hard-links now.
+ - Handling hardlinks correctly if -d is specified.
+ - Passing cp-dev-file test now.
+ - Passing cp-does-not-copy-unreadable-file test now.
+
+
+0.1
+---
+General:
+ - first release of copy.
+
+Options:
+ - -a Same as -dpR
+ - -p Preserve file attributes if possible.
+ - -r Recurse into directories.
+ - -d Preserve symlinks.
+ - -L Follow all symlinks.
+ - -H Follow symlinks on command line.
+ - -c Continue already existing partly copied files

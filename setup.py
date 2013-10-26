@@ -18,6 +18,6 @@ if __name__ == '__main__':
 		url='http://sourceforge.net/projects/python-copy/',
 		packages=['libcopy'],
 		scripts=['copy'],
-		data_files=[	('share/copy', ['LICENSE.txt', 'README.txt']),
+		data_files=[	('share/copy', ['LICENSE.txt', 'README.txt', 'CHANGES.txt']),
 					],
      )
