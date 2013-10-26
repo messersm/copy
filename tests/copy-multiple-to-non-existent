@@ -1,0 +1,5 @@
+touch file1 file2
+copy file1 file2 non-existent
+# Copy returns '2' on uncaught exceptions.
+# So we can be sure to test for '1'
+test $? -eq 1

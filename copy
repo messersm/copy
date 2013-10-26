@@ -92,4 +92,8 @@ if __name__ == '__main__':
 		main()
 	except KeyboardInterrupt:
 		sys.stderr.write('\n')
+	except Exception as e:
+		sys.stderr.write("Uncaught exception:\n%s\n" % str(e) )
+		sys.stderr.write("THIS IS A PROGRAMMING ERROR. PLEASE REPORT!\n")
+		sys.exit(2)
 		
