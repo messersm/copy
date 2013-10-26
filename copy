@@ -45,7 +45,7 @@ def main():
 	
 	parser.add_argument('-p', action='store_true', dest='preserve_attributes', help='preserve file attributes if possible')
 	parser.add_argument('-f', action='store_true', dest='force', default=False, help='force overwriting existing destination files')
-	parser.add_argument('-e', '--exclude', action='append', dest='excludes', metavar='EXCLUDE_PATTERN', default=[], help='exclude file pattern')
+	parser.add_argument('-e', '--exclude', action='append', dest='excludes', metavar='PATTERN', default=[], help='exclude file pattern')
 	parser.add_argument('-i', '--interactive', action='store_true', dest='interactive', help='prompt before overwriting existing files')
 	# parser.add_argument('-l', '-s', action='store_true', dest='create_symlinks_only', default=False, help='Create (sym)links instead of copying.')
 	parser.add_argument('sources', metavar='SOURCE', nargs='+')
