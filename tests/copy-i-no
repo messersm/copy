@@ -1,4 +1,5 @@
 echo "bla" > file1
 touch file2
 echo 'n' | copy -i file1 file2
+echo "" >&2 # add newline
 test ! -s file2
