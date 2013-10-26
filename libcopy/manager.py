@@ -25,23 +25,23 @@ from .logger import Logger
 from .walk import ModeError
 
 class CopyManager(object):
-	"""Takes care of letting the workers work (one after another)."""
-	
-	def __init__(self, options):
-		self.options = options
-		
-		self.logger = Logger(verbose=self.options.verbose)
-		self.workers = []
-	
-	def start(self):
-		# fatal exceptions should be caught here.
-		
-		try:
-			for worker in self.workers:
-				worker.run()
-		
-		except ModeError as e:
-			self.logger.error( str(e) )
-			return
-		
-		self.logger.finish()
+    """Takes care of letting the workers work (one after another)."""
+    
+    def __init__(self, options):
+        self.options = options
+        
+        self.logger = Logger(verbose=self.options.verbose)
+        self.workers = []
+    
+    def start(self):
+        # fatal exceptions should be caught here.
+        
+        try:
+            for worker in self.workers:
+                worker.run()
+        
+        except ModeError as e:
+            self.logger.error( str(e) )
+            return
+        
+        self.logger.finish()

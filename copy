@@ -34,66 +34,66 @@ from libcopy.walker import FilesizeWalker, CopyWalker
 PROG = basename(sys.argv[0])
 
 def main():
-	parser = argparse.ArgumentParser(description='Copy SOURCE to DEST, or multiple SOURCE(s) to DIRECTORY')
-	parser.add_argument('-a', action='store_true', dest='preserve_and_recurse', default=False, help='same as -dpR')
-	parser.add_argument('-r', '-R', action='store_true', dest='recurse', default=False, help='recurse into directories')
-	
-	# symlink related:
-	parser.add_argument('-d', '-P', action='store_const', dest='links', const=L_PRESERVE, default=None, help='preserve (sym)links')
-	parser.add_argument('-L', action='store_const', dest='links', const=L_FOLLOW_ALL, help='follow all symlinks')
-	parser.add_argument('-H', action='store_const', dest='links', const=L_FOLLOW_TOP, help='follow symlinks on command line')
-	
-	parser.add_argument('-p', action='store_true', dest='preserve_attributes', help='preserve file attributes if possible')
-	parser.add_argument('-f', action='store_true', dest='force', default=False, help='force overwriting existing destination files')
-	parser.add_argument('-e', '--exclude', action='append', dest='excludes', metavar='PATTERN', default=[], help='exclude file pattern')
-	parser.add_argument('-i', '--interactive', action='store_true', dest='interactive', help='prompt before overwriting existing files')
-	# parser.add_argument('-l', '-s', action='store_true', dest='create_symlinks_only', default=False, help='Create (sym)links instead of copying.')
-	parser.add_argument('sources', metavar='SOURCE', nargs='+')
-	parser.add_argument('target', metavar='DEST')
-	
-	# version info
-	parser.add_argument('--version', '-V', action='version', version="%s %s" % (PROG, VERSION) )
-	
-	# verbose output
-	parser.add_argument('--verbose', '-v', action="count", default=0, help='be more verbose, -vv gives detailed progress information')
-	
-	# advanced options
-	parser.add_argument('-c', action='store_true', dest='resume', help='continue already existing partly copied files')
-	# parser.add_argument('--dry-run', action='store_true', dest="dry_run", default=False, help='Does a dry-run telling the user what would happen.')
-	
-	options = parser.parse_args()
-	# handle -a
-	if options.preserve_and_recurse:
-		options.recurse = True
-		options.preserve_attributes = True
-	
-	# set symlink policy
-	if options.links == None and options.recurse:
-		options.links = L_PRESERVE
-	elif options.links == None:
-		options.links = L_FOLLOW_TOP
+    parser = argparse.ArgumentParser(description='Copy SOURCE to DEST, or multiple SOURCE(s) to DIRECTORY')
+    parser.add_argument('-a', action='store_true', dest='preserve_and_recurse', default=False, help='same as -dpR')
+    parser.add_argument('-r', '-R', action='store_true', dest='recurse', default=False, help='recurse into directories')
+    
+    # symlink related:
+    parser.add_argument('-d', '-P', action='store_const', dest='links', const=L_PRESERVE, default=None, help='preserve (sym)links')
+    parser.add_argument('-L', action='store_const', dest='links', const=L_FOLLOW_ALL, help='follow all symlinks')
+    parser.add_argument('-H', action='store_const', dest='links', const=L_FOLLOW_TOP, help='follow symlinks on command line')
+    
+    parser.add_argument('-p', action='store_true', dest='preserve_attributes', help='preserve file attributes if possible')
+    parser.add_argument('-f', action='store_true', dest='force', default=False, help='force overwriting existing destination files')
+    parser.add_argument('-e', '--exclude', action='append', dest='excludes', metavar='PATTERN', default=[], help='exclude file pattern')
+    parser.add_argument('-i', '--interactive', action='store_true', dest='interactive', help='prompt before overwriting existing files')
+    # parser.add_argument('-l', '-s', action='store_true', dest='create_symlinks_only', default=False, help='Create (sym)links instead of copying.')
+    parser.add_argument('sources', metavar='SOURCE', nargs='+')
+    parser.add_argument('target', metavar='DEST')
+    
+    # version info
+    parser.add_argument('--version', '-V', action='version', version="%s %s" % (PROG, VERSION) )
+    
+    # verbose output
+    parser.add_argument('--verbose', '-v', action="count", default=0, help='be more verbose, -vv gives detailed progress information')
+    
+    # advanced options
+    parser.add_argument('-c', action='store_true', dest='resume', help='continue already existing partly copied files')
+    # parser.add_argument('--dry-run', action='store_true', dest="dry_run", default=False, help='Does a dry-run telling the user what would happen.')
+    
+    options = parser.parse_args()
+    # handle -a
+    if options.preserve_and_recurse:
+        options.recurse = True
+        options.preserve_attributes = True
+    
+    # set symlink policy
+    if options.links == None and options.recurse:
+        options.links = L_PRESERVE
+    elif options.links == None:
+        options.links = L_FOLLOW_TOP
 
-	# prepare the manager
-	m = CopyManager(options)
-	if options.verbose >= 2:
-		m.workers.append( FilesizeWalker(m) )
-	
-	m.workers.append( CopyWalker(m) )
+    # prepare the manager
+    m = CopyManager(options)
+    if options.verbose >= 2:
+        m.workers.append( FilesizeWalker(m) )
+    
+    m.workers.append( CopyWalker(m) )
 
-	# start the manager and check for errors
-	m.start()
-	if m.logger.had_errors:
-		sys.exit(1)
-	else:
-		sys.exit(0)
+    # start the manager and check for errors
+    m.start()
+    if m.logger.had_errors:
+        sys.exit(1)
+    else:
+        sys.exit(0)
 
 if __name__ == '__main__':
-	try:
-		main()
-	except KeyboardInterrupt:
-		sys.stderr.write('\n')
-	except Exception as e:
-		sys.stderr.write("Uncaught exception:\n%s\n" % str(e) )
-		sys.stderr.write("THIS IS A PROGRAMMING ERROR. PLEASE REPORT!\n")
-		sys.exit(2)
-		
+    try:
+        main()
+    except KeyboardInterrupt:
+        sys.stderr.write('\n')
+    except Exception as e:
+        sys.stderr.write("Uncaught exception:\n%s\n" % str(e) )
+        sys.stderr.write("THIS IS A PROGRAMMING ERROR. PLEASE REPORT!\n")
+        sys.exit(2)
+        

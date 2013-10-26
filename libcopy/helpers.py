@@ -16,32 +16,32 @@
 # along with copy.  If not, see <http://www.gnu.org/licenses/>.
 
 
-_FILESIZES = [	(1024**4, "T"),
-				(1024**3, "G"),
-				(1024**2, "M"),
-				(1024**1, "K")
-			]
+_FILESIZES = [  (1024**4, "T"),
+                (1024**3, "G"),
+                (1024**2, "M"),
+                (1024**1, "K")
+            ]
 
 def readable_filesize(filesize):
-	"""Returns a human readable string from an integer filesize."""
-	for size, ext in _FILESIZES:
-		if filesize >= size:
-			return "%.1f%s" % (float(filesize) / size, ext)
-	
-	return "%d" % filesize
+    """Returns a human readable string from an integer filesize."""
+    for size, ext in _FILESIZES:
+        if filesize >= size:
+            return "%.1f%s" % (float(filesize) / size, ext)
+    
+    return "%d" % filesize
 
 
 def shortname(name, length=8):
-	"""Returns name with length length, shortening or appending if needed."""
-	s_len = len(name)
-	
-	if s_len <= length:
-		return name + ' ' * (length - s_len )
-		
-	dots = '.' * (2 + length % 2)
-	part = (length - length % 2 - 2) // 2
-	
-	return name[:part] + dots + name[-part:]
+    """Returns name with length length, shortening or appending if needed."""
+    s_len = len(name)
+    
+    if s_len <= length:
+        return name + ' ' * (length - s_len )
+        
+    dots = '.' * (2 + length % 2)
+    part = (length - length % 2 - 2) // 2
+    
+    return name[:part] + dots + name[-part:]
 
 def dummy(*args, **kwargs):
-	pass
+    pass
