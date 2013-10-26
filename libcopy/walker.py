@@ -63,7 +63,7 @@ class PathWalker(object):
 
 class FilesizeWalker(PathWalker):
     def __init__(self, *args, **kwargs):
-        super(self.__class__, self).__init__(*args, **kwargs)
+        super(FilesizeWalker, self).__init__(*args, **kwargs)
         
         self.actions = { REG : self.file_action }
         self.bytes_total = 0
@@ -72,13 +72,13 @@ class FilesizeWalker(PathWalker):
         self.bytes_total += getsize(src)
     
     def run(self):
-        super(self.__class__, self).run()
+        super(FilesizeWalker, self).run()
         self.logger.set_total(self.bytes_total)
 
 
 class CopyWalker(PathWalker):
     def __init__(self, *args, **kwargs):
-        super(self.__class__, self).__init__(*args, **kwargs)
+        super(CopyWalker, self).__init__(*args, **kwargs)
 
         self.actions = {    # errors
                             NOSTAT : self.error_action,
@@ -142,7 +142,7 @@ class CopyWalker(PathWalker):
                 self._real_file_action(type, top, src, dst)
 
     def run(self):
-        super(self.__class__, self).run()
+        super(CopyWalker, self).run()
         self.handle_interactive()
 
     def copystat_if_wanted(self, src, dst):
