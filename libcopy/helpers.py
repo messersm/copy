@@ -32,8 +32,11 @@ def readable_filesize(filesize):
 
 
 def shortname(name, length=8):
-	if len(name) <= length:
-		return name
+	"""Returns name with length length, shortening or appending if needed."""
+	s_len = len(name)
+	
+	if s_len <= length:
+		return name + ' ' * (length - s_len )
 		
 	dots = '.' * (2 + length % 2)
 	part = (length - length % 2 - 2) // 2

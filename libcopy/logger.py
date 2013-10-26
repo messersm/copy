@@ -20,11 +20,14 @@
 # standard imports
 import sys
 
-from os.path import basename
+from os.path import basename, getsize
+
+# local imports
+from .helpers import readable_filesize, shortname
 
 
 PROG = basename(sys.argv[0])
-
+TERMINAL_WIDTH = 80
 
 class BaseLogger(object):
 	def __init__(self):
@@ -60,6 +63,56 @@ class VerboseLogger(BaseLogger):
 	def start_copy(self, src, dst):
 		sys.stderr.write("'%s' -> '%s'\n" % (src, dst) )
 
+class ProgressLogger(BaseLogger):
+	def __init__(self, *args, **kwargs):
+		super(self.__class__, self).__init__(*args, **kwargs)
+		
+		self.bytes_done = 0
+		self.bytes_total = 0
+		
+		self.f_bytes_done = 0
+		self.f_bytes_total = 0
+		self.f_name = ""
+	
+	def start_copy(self, src, dst):
+		self.f_name = basename(src)
+		self.f_bytes_total = getsize(src)
+		self.f_bytes_done = 0
+	
+	def finish_copy(self, src, dst):
+		self.f_name = ""
+
+	def set_total(self, bytes_total):
+		self.bytes_total = bytes_total
+
+	def update_copy(self, bytes_step):
+		self.bytes_done += bytes_step
+		self.f_bytes_done += bytes_step
+		
+		s = '' 
+		i = 0
+		
+		for (a, b) in (	(self.f_bytes_done, self.f_bytes_total),
+						(self.bytes_done, self.bytes_total) ):
+			
+			if b == 0:
+				c = 100
+			else:
+				c = float(a) * 100 / b
+			s += "%s/%s" % (readable_filesize(a), readable_filesize(b) )
+			s += " (%.1f%%)" % c
+			
+			if i == 0:
+				s += ", total: "
+				i += 1
+
+		fname = shortname(self.f_name + ': ', TERMINAL_WIDTH - len(s) )
+		s = fname + s
+		sys.stderr.write("\r%s" % s)
+	
+	def finish(self):
+		sys.stderr.write('\n')
+
 def Logger(verbose=0):
 	"""Factory function that returns the wanted logger instance."""
 	
@@ -69,3 +122,7 @@ def Logger(verbose=0):
 	# 
 	elif verbose == 1:
 		return VerboseLogger()
+		
+	else:
+		return ProgressLogger()
+
