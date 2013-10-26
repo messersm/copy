@@ -45,7 +45,9 @@ class BaseLogger(object):
 		sys.stderr.write("%s: %s\n" % (PROG, msg) )
 	
 	def input(self, msg):
-		return raw_input("%s: %s" % (PROG, msg) )
+		# raw_input writes to stdout, we want stderr
+		sys.stderr.write("%s: %s " % (PROG, msg) )
+		return raw_input()
 
 	def set_total(self, bytes_total):
 		pass

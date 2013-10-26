@@ -99,7 +99,7 @@ class CopyWalker(PathWalker):
 							LINK		: self.link_action
 						}
 						
-		self.iteractive_list = []
+		self.interactive_list = []
 	
 	def error_action(self, type, top, src, dst):
 		if type == NOSTAT:
@@ -140,6 +140,10 @@ class CopyWalker(PathWalker):
 			answer = self.logger.input("overwrite '%s'?" % dst)
 			if answer.lower() in ['yes', 'ye', 'y']:
 				self._real_file_action(type, top, src, dst)
+
+	def run(self):
+		super(self.__class__, self).run()
+		self.handle_interactive()
 
 	def copystat_if_wanted(self, src, dst):
 		if self.options.preserve_attributes:
