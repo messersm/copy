@@ -1,0 +1,3 @@
+touch file1.txt
+copy -e '*.txt' file1.txt file2
+test ! -e file2
