@@ -9,35 +9,43 @@
 OLD_PWD="$PWD"
 
 if [ ! -e ".git" -o ! -e 'copy' ]; then
-	echo "Please run this file from the git root."
-	exit 1
+    echo "Please run this file from the git root."
+    exit 1
 else
-	# Add copy to PATH - making sure we
-	# use the development version
-	PATH="$PWD:$PATH"
+    # Add copy to PATH - making sure we
+    # use the development version
+    PATH="$PWD:$PATH"
 fi
 
 logfile="$(mktemp)"
+failcount=0
 
 for test in $(find $PWD/tests -type f); do
-	tmpdir="$(mktemp -d)"
-	
-	cd $tmpdir || exit
+    tmpdir="$(mktemp -d)"
+    
+    cd $tmpdir || exit
 
-	echo -n ">>> ${test##**/}"
-	sh $test 2>$logfile
-	
-	if [ "$?" -eq 0 ]; then
-		echo " - OK"
-		cat $logfile || exit 1
-	else
-		echo " - FAIL"
-		cat $logfile || exit 1
-	fi
+    echo -n ">>> ${test##**/}"
+    sh $test 2>$logfile
+    
+    if [ "$?" -eq 0 ]; then
+        echo " - OK"
+        cat $logfile || exit 1
+    else
+        echo " - FAIL"
+        failcount=$(($failcount+1))
+        cat $logfile || exit 1
+    fi
 
-	cd "$OLD_PWD" || exit 1
-	rm -rf $tmpdir || exit 1
-	
+    cd "$OLD_PWD" || exit 1
+    rm -rf $tmpdir || exit 1
+    
 done
+
+if [ $failcount -gt 0 ]; then
+    echo "$failcount error(s)."
+else
+    echo "All passed."
+fi
 
 rm $logfile || exit 1
