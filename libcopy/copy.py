@@ -1,4 +1,4 @@
-# Copyright (C) 2013 Maik Messerschmidt
+# Copyright (C) 2013-2014 Maik Messerschmidt
 
 # This file is part of copy.
 
@@ -15,6 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with copy.  If not, see <http://www.gnu.org/licenses/>.
 
+"""Module that takes care of the actual copying."""
+
+__docformat__ = 'restructuredtext'
 
 # standard imports
 import os
@@ -26,7 +29,16 @@ from shutil import _samefile, Error, SpecialFileError, stat
 from .helpers import dummy
 
 def isdevfile(filename):
-    """Returns True if filename points to a device file, else False."""
+    """Test, if filename points to a device file.
+    
+    :Parameters:
+        `filename` : str
+            The filename of the file to check.
+    
+    :rtype: bool
+    
+    """
+    
     try:
         st = os.stat(filename)
     except OSError:
@@ -36,9 +48,24 @@ def isdevfile(filename):
 
 
 def copylink(src, dst, force=False, hardlink=False):
+    """Copy a symbolic or hardlink.
+    
+    :Parameters:
+        `src` : str
+            Filename of the source file.
+        `dst` : str
+            Filename of the destination file.
+        `force` : bool
+            Force overwriting dst, if it exists.
+        `hardlink` : bool
+            Create the hardlink dst for src.
+            
+            
+    :raise shutil.Error: Raised, if copying the link fails.
+    """
+    
     # cp unlinks files, which exist and overwrites them with links...
     # ... so do we. :)
-    
     if exists(dst):
         # Don't unlink the file if -f is not set and dst
         # is not writeable by us.
@@ -65,7 +92,19 @@ def copylink(src, dst, force=False, hardlink=False):
         os.symlink(target, dst)
 
 def copyfileobj(fsrc, fdst, length=16*1024, callback=dummy):
-    """copy data from file-like object fsrc to file-like object fdst"""
+    """Copy data from fsrc to fdst.
+    
+    :Parameters:
+        `fsrc` : file-like object
+            The source file of the data.
+        `fdst` : file-like object
+            The destination file of the data.
+        `length` : int
+            The blocksize to copy.
+    
+    This function is called by the copyfile function.
+    """
+    
     while 1:
         buf = fsrc.read(length)
         if not buf:
@@ -75,7 +114,27 @@ def copyfileobj(fsrc, fdst, length=16*1024, callback=dummy):
         fdst.write(buf)
 
 def copyfile(src, dst, length=16*1024, resume=False, force=False, callback=dummy):
-    """Copy data from src to dst"""
+    """Copy data from src to dst.
+    
+    :Parameters:
+        `src` : str
+            The filename of the source file.
+        `dst` : str
+            The filename of the destination file.
+        `length` : int
+            The blocksize to copy (defaults to 16K). 
+        `resume` : bool
+            Whether or not dst is intended to be a partly copy of src.
+            If True, we try to continue copying instead of recopying
+            already complete data.
+        `force` : bool
+            Force overwriting already existing files.
+        `callback` : callable
+            A callback-function that is called everytime we copy a
+            block of data. It should take exactly one argument: The
+            number of bytes copied at that time.
+    """
+
     if _samefile(src, dst):
         raise Error("'%s' and '%s' are the same file" % (src, dst))
 
@@ -133,7 +192,19 @@ def _checkpart(fsrc, fdst, offset, length=512):
 
 def ispartfile(src, dst, length=512, step=1024**2):
     """Checks whether dst is the beginning of the file src.
-    Returns True or False.
+
+    :Parameters:
+        `src` : str
+            The name of the source file.
+        `dst` : str
+            The name of the destination file.
+        `length` : int
+            The blocksize to use in order to check whether the data
+            in dst is the same as in src.
+        `step` : int
+            The distance between checked data blocks.
+
+    :rtype: bool
     
     DO NOTE: Not all bytes in both files are checked - the default
     settings make sure, that blocks of 512 bytes of both files
@@ -156,19 +227,11 @@ def ispartfile(src, dst, length=512, step=1024**2):
             while 1:
                 # check end
                 if offset > dstsize - length:
-                    ret = _checkpart(fsrc, fdst, dstsize - length, length=length)
-                    # is this needed ?:
-                    fsrc.close()
-                    fdst.close()
-                
-                    return ret
+                    return _checkpart(fsrc, fdst, dstsize - length,
+                                length=length)
                                 
                 if not _checkpart(fsrc, fdst, offset, length=length):
-                    fsrc.close()
-                    fdst.close()
                     return False
                 
                 offset += step
-
-
 
