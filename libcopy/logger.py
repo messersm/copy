@@ -22,6 +22,11 @@ import sys
 
 from os.path import basename, getsize
 
+# make the use of raw_input python3 compatible
+if sys.version_info.major >= 3:
+    raw_input = input
+
+
 # local imports
 from .helpers import readable_filesize, shortname
 
