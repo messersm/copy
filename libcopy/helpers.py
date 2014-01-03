@@ -1,4 +1,4 @@
-# Copyright (C) 2013 Maik Messerschmidt
+# Copyright (C) 2013-2014 Maik Messerschmidt
 
 # This file is part of copy.
 
@@ -15,6 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with copy.  If not, see <http://www.gnu.org/licenses/>.
 
+"""Module that provides helper functions."""
+
+__docformat__ = 'restructuredtext'
 
 _FILESIZES = [  (1024**4, "T"),
                 (1024**3, "G"),
@@ -23,7 +26,14 @@ _FILESIZES = [  (1024**4, "T"),
             ]
 
 def readable_filesize(filesize):
-    """Returns a human readable string from an integer filesize."""
+    """Return a human readable string from an integer filesize.
+    
+    :Parameters:
+        `filesize` : int
+            The size of a file in bytes.
+            
+    :rtype: str
+    """
     for size, ext in _FILESIZES:
         if filesize >= size:
             return "%.1f%s" % (float(filesize) / size, ext)
@@ -32,7 +42,19 @@ def readable_filesize(filesize):
 
 
 def shortname(name, length=8):
-    """Returns name with length length, shortening or appending if needed."""
+    """Return a shorter name.
+    
+    Cuts of the middle of the name and returns a name of the given
+    length. E.g.: "longfilename.txt" -> "lon..txt"
+    
+    :Parameters:
+        `name` : str
+            The name to shorten.
+        `length` : int
+            The length of the returned string.
+    
+    :rtype: str
+    """
     s_len = len(name)
     
     if s_len <= length:
@@ -44,4 +66,5 @@ def shortname(name, length=8):
     return name[:part] + dots + name[-part:]
 
 def dummy(*args, **kwargs):
+    """Do nothing - taking any arguments and keywords."""
     pass
