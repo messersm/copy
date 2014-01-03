@@ -1,4 +1,4 @@
-# Copyright (C) 2013 Maik Messerschmidt
+# Copyright (C) 2013-2014 Maik Messerschmidt
 
 # This file is part of copy.
 
